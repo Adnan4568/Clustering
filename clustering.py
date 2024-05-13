@@ -1,10 +1,13 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import sklearn.preprocessing as pp
 import sklearn.cluster as cluster
 import sklearn.metrics as skmet
+import scipy.optimize as opt
+import errors as err
 
 df = pd.read_csv('stats.csv', skiprows=4)
 df = df.fillna(0)
@@ -18,72 +21,20 @@ indicator_names = ['Population, total',
                    'Energy use (kg of oil equivalent per capita)']
 
 df_filtered = df[df['Indicator Name'].isin(indicator_names)]
-print(df_filtered)
-
-years_range = [str(year) for year in range(1990, 2010)]
-filtered_df = df_filtered[years_range]
-
 df_filtered = df_filtered.reset_index(drop=True)
 print(df_filtered)
 
-# Pivot the data to have countries as rows and indicators as columns
 
+# Function to transpose
+def transpose(df_filtered):
+    
+    ''' Transpose the filtered dataframe '''
+    
+    transposed_df = df_filtered.transpose()
+    return transposed_df
 
-# pivot_df = filtered_df.pivot_table(index='Country Name', columns='Indicator Name')
-
-# print(pivot_df)
-
-# # Remove rows with missing values or non-numeric data
-# pivot_df.dropna(axis=0, how='any', inplace=True)
-# pivot_df = pivot_df.apply(pd.to_numeric, errors='coerce').dropna(axis=0, how='any')
-
-# # Standardize the data
-# scaler = StandardScaler()
-# scaled_data = scaler.fit_transform(pivot_df)
-
-# # Apply K-means clustering
-# n_clusters = 3  # Number of clusters
-# kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-# cluster_labels = kmeans.fit_predict(scaled_data)
-
-# # Add cluster labels to the DataFrame
-# pivot_df['Cluster'] = cluster_labels
-
-# # Print the clustering results
-# print("Clustering Results:")
-# print(pivot_df[['Cluster']])
-
-# plt.figure(figsize=(10, 6))
-
-# # Define colors for each cluster (adjust as needed)
-# colors = ['red', 'green', 'blue']
-
-# # Extract data for plotting
-# x = pivot_df['Population, total']
-# y = pivot_df['CO2 emissions (metric tons per capita)']
-
-# # Plot each point with its cluster color
-# for cluster_id in range(n_clusters):
-#     cluster_data = pivot_df[pivot_df['Cluster'] == cluster_id]
-#     plt.scatter(cluster_data['Population'], cluster_data['CO2 emissions'], c=colors[cluster_id], label=f'Cluster {cluster_id}')
-
-# # Plot cluster centers (optional)
-# cluster_centers = scaler.inverse_transform(kmeans.cluster_centers_)
-# plt.scatter(cluster_centers[:, 0], cluster_centers[:, 1], marker='x', s=100, c='black', label='Cluster Centers')
-
-# # Add labels and title
-# plt.xlabel('Population')
-# plt.ylabel('CO2 emissions')
-# plt.title('Clustering of Countries based on Population and CO2 emissions')
-
-# # Add legend
-# plt.legend()
-
-# # Show plot
-# plt.show()
-
-
-
+transposed_data = transpose(df_filtered)
+print(transposed_data)
 
 #%%
 df_ag = pd.read_csv('df_ag.csv')
@@ -146,45 +97,52 @@ plt.show()
 # Normalising first 15 years
 scaler1 = pp.RobustScaler()
 scaler2 = pp.RobustScaler()
+scaler5 = pp.RobustScaler()
 
-df_clust1 = merged_df[['ag mean first 15','pop mean first 15']]
-df_clust2 = merged_df[['co2 mean first 15','en mean first 15']]
+df_clust1 = first_15_df[['ag mean first 15','pop mean first 15']]
+df_clust2 = first_15_df[['co2 mean first 15','en mean first 15']]
+df_clust5 = first_15_df[['co2 mean first 15','ag mean first 15']]
 
 # apply the scaling
 df_norm1 = scaler1.fit_transform(df_clust1)
 df_norm2 = scaler2.fit_transform(df_clust2)
+df_norm5 = scaler2.fit_transform(df_clust5)
 
 print(df_norm1)
 print(df_norm2)
-
+print(df_norm5)
 
 # Normalising latest 15 years
 scaler3 = pp.RobustScaler()
 scaler4 = pp.RobustScaler()
+scaler6 = pp.RobustScaler()
 
 df_clust3 = last_15_df[['ag mean last 15','pop mean last 15']]
 df_clust4 = last_15_df[['co2 mean last 15', 'en mean last 15']]
+df_clust6 = last_15_df[['co2 mean last 15', 'ag mean last 15']]
 
 # apply the scaling
 df_norm3 = scaler3.fit_transform(df_clust3)
 df_norm4 = scaler4.fit_transform(df_clust4)
+df_norm6 = scaler4.fit_transform(df_clust6)
 
 print(df_norm3)
 print(df_norm4)
+print(df_norm6)
 
 #%%
-features_df = first_15_df[['ag mean first 15','pop mean first 15']]
+# features_df = first_15_df[['ag mean first 15','pop mean first 15']]
 
-# Normalize the data
+# # Normalize the data
 scaler = StandardScaler()
-normalized_data = scaler.fit_transform(features_df)
+# normalized_data = scaler.fit_transform(features_df)
 
 # Apply K-means clustering
 kmeans = KMeans(n_clusters=3, random_state=0)
-cluster_labels = kmeans.fit_predict(normalized_data)
+cluster_labels = kmeans.fit_predict(df_norm1)
 
 # Visualize the clustering results
-plt.scatter(normalized_data[:, 0], normalized_data[:, 1], c=cluster_labels, cmap='viridis')
+plt.scatter(df_norm1[:, 0], df_norm1[:, 1], c=cluster_labels, cmap='viridis')
 plt.xlabel('Agricultural Land')
 plt.ylabel('CO2')
 plt.title('Clustering Results')
@@ -194,7 +152,7 @@ plt.show()
 
 #%%
 # Cluster for first 15 for Agricultural land v Population
-kmeans = cluster.KMeans(n_clusters=3, n_init=100)
+kmeans = cluster.KMeans(n_clusters=1, n_init=20)
 # Fit the data, results are stored in the kmeans object
 kmeans.fit(df_norm1) # fit done on x,y pairs
 # extract cluster labels
@@ -205,9 +163,9 @@ cen = scaler.inverse_transform(cen)
 xkmeans = cen[:, 0]
 ykmeans = cen[:, 1]
 
-x = merged_df['ag mean first 15']
-y = merged_df['pop mean first 15']
-plt.figure(figsize=(8.0, 8.0))
+x = first_15_df['ag mean first 15']
+y = first_15_df['pop mean first 15']
+plt.figure(figsize=(10, 8))
 # plot data with kmeans cluster number
 plt.scatter(x, y, 10, labels, marker="o")
 # show cluster centres
@@ -242,6 +200,7 @@ plt.ylabel('Energy use (kg of oil)')
 plt.title('Cluster for CO2 emission v Energy use for 1990-2004')
 plt.show()
 
+#%%
 # Cluster for last 15 years for Agricultural land v Population total
 kmeans3 = cluster.KMeans(n_clusters=3, n_init=100)
 # Fit the data, results are stored in the kmeans object
@@ -265,6 +224,34 @@ plt.xlabel('Agricultural Land')
 plt.ylabel('Population, total')
 plt.title('Cluster for Agricultural land v Population for 2005-2020')
 plt.show()
+
+#%%
+# Cluster for first 15 years for Agricultural land v CO2 emission
+kmeans5 = cluster.KMeans(n_clusters=1, n_init=20)
+# Fit the data, results are stored in the kmeans object
+kmeans5.fit(df_norm5) # fit done on x,y pairs
+# extract cluster labels
+labels5 = kmeans5.labels_
+# extract the estimated cluster centres and convert to original scales
+cen5 = kmeans5.cluster_centers_
+cen5 = scaler5.inverse_transform(cen5)
+xkmeans5 = cen5[:, 0]
+ykmeans5 = cen5[:, 1]
+
+x5 = first_15_df['co2 mean first 15']
+y5 = first_15_df['ag mean first 15']
+plt.figure(figsize=(8.0, 8.0))
+# plot data with kmeans cluster number
+plt.scatter(x5, y5, 10, labels5, marker="o", label='Data points')
+# show cluster centres
+plt.scatter(xkmeans5, ykmeans5, 40, "k", marker="d", label='Cluster Centre')
+plt.xlabel('Agricultural Land')
+plt.ylabel('Population, total')
+plt.title('Cluster for Agricultural land v Population for 2005-2020')
+plt.legend()
+plt.grid(True)
+plt.show()
+#%%
 
 # Cluster for last 15 years for CO2 emission v Energy use
 kmeans4 = cluster.KMeans(n_clusters=3, n_init=100)
@@ -328,18 +315,51 @@ for ic in range(2, 11):
     print(f"The silhouette score for {ic: 3d} is {score: 7.4f}")
     
 #%%
-#X = df_filtered[['Population, total', 'Agricultural land (sq. km)']]
+ag_mean = pd.read_csv('agriculture_mean.csv')
+print(ag_mean)
 
-# # Apply K-means clustering
-# kmeans = KMeans(n_clusters=4)
-# kmeans.fit(X)
-# y_kmeans = kmeans.predict(X)
+plt.figure()
+plt.plot(ag_mean['Year'], ag_mean['Mean'], label='CO2 emissions')
+plt.ylabel('Agriculture land (km^s)')
+plt.xlabel('Year')
+plt.title('Agriculture land over 60 years')
+plt.legend()
+plt.show()
 
-# # Plot the clusters and centroids
-# plt.scatter(X['Population, total'], X['Agricultural land (sq. km)'], c=y_kmeans, s=50, cmap='viridis')
-# centers = kmeans.cluster_centers_
-# plt.scatter(centers[:, 0], centers[:, 1], c='red', s=200, alpha=0.75)
-# plt.xlabel('Population, total')
-# plt.ylabel('Agricultural land (sq. km)')
-# plt.title('K-means Clustering')
-# plt.show()
+def poly(x, a, b, c, d, e):
+    """ Calulates polynominal"""
+    x = x - 1961
+    f = a + b*x + c*x**2 + d*x**3 + e*x**4
+    return f
+
+param, covar = opt.curve_fit(poly, ag_mean['Year'], ag_mean['Mean'])
+sigma = np.sqrt(np.diag(covar))
+print(sigma)
+year = np.arange(1961, 2041)
+forecast = poly(year, *param)
+sigma = err.error_prop(year, poly, param, covar)
+low = forecast - sigma
+up = forecast + sigma
+ag_mean["fit"] = poly(ag_mean['Year'], *param)
+plt.figure()
+plt.plot(ag_mean['Year'], ag_mean['Mean'], label='Agriculture land')
+plt.plot(year, forecast, label="forecast")
+# plot uncertainty range
+plt.fill_between(year, low, up, color="lime", alpha=0.5)
+plt.xlabel('Year')
+plt.ylabel('Agriculture')
+plt.title('Error for Agriculture land')
+plt.legend()
+plt.show()
+
+print(f"a = {param[0]:5.3f} +/- {sigma[0]:5.3f}")
+print(f"b = {param[1]:5.3f} +/- {sigma[1]:5.3f}")
+
+#%%
+
+
+
+
+
+
+
