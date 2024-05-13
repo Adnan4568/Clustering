@@ -79,6 +79,7 @@ tick_positions = list(range(len(first_15_df.columns)))
 tick_labels = first_15_df.columns
 plt.xticks(tick_positions, tick_labels, rotation=30)
 plt.yticks(tick_positions, tick_labels, rotation=0)
+plt.title('Heatmap for first 15 years between Indicators')
 plt.show()
 
 corr = last_15_df.corr(numeric_only=True)
@@ -91,44 +92,45 @@ tick_positions = list(range(len(last_15_df.columns)))
 tick_labels = last_15_df.columns
 plt.xticks(tick_positions, tick_labels, rotation=30)
 plt.yticks(tick_positions, tick_labels, rotation=0)
+plt.title('Heatmap for last 15 years between Indicators')
 plt.show()
 
 #%%
 # Normalising first 15 years
 scaler1 = pp.RobustScaler()
 scaler2 = pp.RobustScaler()
-scaler5 = pp.RobustScaler()
+
 
 df_clust1 = first_15_df[['ag mean first 15','pop mean first 15']]
 df_clust2 = first_15_df[['co2 mean first 15','en mean first 15']]
-df_clust5 = first_15_df[['co2 mean first 15','ag mean first 15']]
+
 
 # apply the scaling
 df_norm1 = scaler1.fit_transform(df_clust1)
 df_norm2 = scaler2.fit_transform(df_clust2)
-df_norm5 = scaler2.fit_transform(df_clust5)
+
 
 print(df_norm1)
 print(df_norm2)
-print(df_norm5)
+
 
 # Normalising latest 15 years
 scaler3 = pp.RobustScaler()
 scaler4 = pp.RobustScaler()
-scaler6 = pp.RobustScaler()
+
 
 df_clust3 = last_15_df[['ag mean last 15','pop mean last 15']]
 df_clust4 = last_15_df[['co2 mean last 15', 'en mean last 15']]
-df_clust6 = last_15_df[['co2 mean last 15', 'ag mean last 15']]
+
 
 # apply the scaling
 df_norm3 = scaler3.fit_transform(df_clust3)
 df_norm4 = scaler4.fit_transform(df_clust4)
-df_norm6 = scaler4.fit_transform(df_clust6)
+
 
 print(df_norm3)
 print(df_norm4)
-print(df_norm6)
+
 
 #%%
 # features_df = first_15_df[['ag mean first 15','pop mean first 15']]
@@ -152,7 +154,8 @@ plt.show()
 
 #%%
 # Cluster for first 15 for Agricultural land v Population
-kmeans = cluster.KMeans(n_clusters=1, n_init=20)
+kmeans = cluster.KMeans(n_clusters=3, n_init=100)
+scaler.fit(df_norm1)
 # Fit the data, results are stored in the kmeans object
 kmeans.fit(df_norm1) # fit done on x,y pairs
 # extract cluster labels
@@ -165,14 +168,16 @@ ykmeans = cen[:, 1]
 
 x = first_15_df['ag mean first 15']
 y = first_15_df['pop mean first 15']
-plt.figure(figsize=(10, 8))
+plt.figure(figsize=(8, 8))
 # plot data with kmeans cluster number
-plt.scatter(x, y, 10, labels, marker="o")
+plt.scatter(x, y, 10, labels, marker="o", label='Data points')
 # show cluster centres
-plt.scatter(xkmeans, ykmeans, 40, "k", marker="d")
-plt.xlabel('Agricultural Land')
-plt.ylabel('Population, total')
-plt.title('Cluster for Agricultural land v Population for 1990-2004')
+plt.scatter(xkmeans, ykmeans, 60, "k", marker="d", label='Cluster centre')
+plt.xlabel('Agricultural Land', fontsize=14)
+plt.ylabel('Population, total', fontsize=14)
+plt.title('Cluster for Agricultural land v Population for 1990-2004'
+          , fontsize=16)
+plt.legend()
 plt.show()
 
 #%%
@@ -192,12 +197,13 @@ x2 = first_15_df['co2 mean first 15']
 y2 = first_15_df['en mean first 15']
 plt.figure(figsize=(8.0, 8.0))
 # plot data with kmeans cluster number
-plt.scatter(x2, y2, 10, labels2, marker="o")
+plt.scatter(x2, y2, 10, labels2, marker="o", label='Data points')
 # show cluster centres
-plt.scatter(xkmeans2, ykmeans2, 40, "k", marker="d")
-plt.xlabel('CO2 emissions (metric tons per capita)')
-plt.ylabel('Energy use (kg of oil)')
-plt.title('Cluster for CO2 emission v Energy use for 1990-2004')
+plt.scatter(xkmeans2, ykmeans2, 40, "k", marker="d", label='Cluster centre')
+plt.xlabel('CO2 emissions (metric tons per capita)', fontsize=14)
+plt.ylabel('Energy use (kg of oil)', fontsize=14)
+plt.title('Cluster for CO2 emission v Energy use for 1990-2004', fontsize=16)
+plt.legend()
 plt.show()
 
 #%%
@@ -217,40 +223,17 @@ x3 = last_15_df['ag mean last 15']
 y3 = last_15_df['pop mean last 15']
 plt.figure(figsize=(8.0, 8.0))
 # plot data with kmeans cluster number
-plt.scatter(x3, y3, 10, labels3, marker="o")
+plt.scatter(x3, y3, 10, labels3, marker="o", label='Data points')
 # show cluster centres
-plt.scatter(xkmeans3, ykmeans3, 40, "k", marker="d")
-plt.xlabel('Agricultural Land')
-plt.ylabel('Population, total')
-plt.title('Cluster for Agricultural land v Population for 2005-2020')
-plt.show()
-
-#%%
-# Cluster for first 15 years for Agricultural land v CO2 emission
-kmeans5 = cluster.KMeans(n_clusters=1, n_init=20)
-# Fit the data, results are stored in the kmeans object
-kmeans5.fit(df_norm5) # fit done on x,y pairs
-# extract cluster labels
-labels5 = kmeans5.labels_
-# extract the estimated cluster centres and convert to original scales
-cen5 = kmeans5.cluster_centers_
-cen5 = scaler5.inverse_transform(cen5)
-xkmeans5 = cen5[:, 0]
-ykmeans5 = cen5[:, 1]
-
-x5 = first_15_df['co2 mean first 15']
-y5 = first_15_df['ag mean first 15']
-plt.figure(figsize=(8.0, 8.0))
-# plot data with kmeans cluster number
-plt.scatter(x5, y5, 10, labels5, marker="o", label='Data points')
-# show cluster centres
-plt.scatter(xkmeans5, ykmeans5, 40, "k", marker="d", label='Cluster Centre')
-plt.xlabel('Agricultural Land')
-plt.ylabel('Population, total')
-plt.title('Cluster for Agricultural land v Population for 2005-2020')
+plt.scatter(xkmeans3, ykmeans3, 40, "k", marker="d", label='Cluster centre')
+plt.xlabel('Agricultural Land', fontsize=14)
+plt.ylabel('Population, total', fontsize=14)
+plt.title('Cluster for Agricultural land v Population for 2005-2020'
+          , fontsize=16)
 plt.legend()
-plt.grid(True)
 plt.show()
+
+
 #%%
 
 # Cluster for last 15 years for CO2 emission v Energy use
@@ -269,12 +252,13 @@ x4 = last_15_df['co2 mean last 15']
 y4 = last_15_df['en mean last 15']
 plt.figure(figsize=(8.0, 8.0))
 # plot data with kmeans cluster number
-plt.scatter(x4, y4, 10, labels4, marker="o")
+plt.scatter(x4, y4, 10, labels4, marker="o", label='Data points')
 # show cluster centres
-plt.scatter(xkmeans4, ykmeans4, 40, "k", marker="d")
-plt.xlabel('CO2 emissions (metric tons per capita)')
-plt.ylabel('Energy use (kg of oil)')
-plt.title('Cluster for CO2 emissions v Energy use for 2005-2020')
+plt.scatter(xkmeans4, ykmeans4, 40, "k", marker="d", label='Cluster centre')
+plt.xlabel('CO2 emissions (metric tons per capita)', fontsize=14)
+plt.ylabel('Energy use (kg of oil)', fontsize=14)
+plt.title('Cluster for CO2 emissions v Energy use for 2005-2020', fontsize=16)
+plt.legend()
 plt.show()
 
 #%%
@@ -348,7 +332,7 @@ plt.plot(year, forecast, label="forecast")
 plt.fill_between(year, low, up, color="lime", alpha=0.5)
 plt.xlabel('Year')
 plt.ylabel('Agriculture')
-plt.title('Error for Agriculture land')
+plt.title('Error for Agriculture land', fontsize=16)
 plt.legend()
 plt.show()
 
@@ -356,8 +340,45 @@ print(f"a = {param[0]:5.3f} +/- {sigma[0]:5.3f}")
 print(f"b = {param[1]:5.3f} +/- {sigma[1]:5.3f}")
 
 #%%
+co2_mean = pd.read_csv('co2 mean.csv')
+print(co2_mean)
 
+plt.figure()
+plt.plot(co2_mean['Year'], co2_mean['Mean'], label='CO2 emissions')
+plt.ylabel('CO2 Emission for each year')
+plt.xlabel('Year')
+plt.title('CO2 emissions over 30 years')
+plt.legend()
+plt.show()
 
+def poly(x, a, b, c, d, e):
+    """ Calulates polynominal"""
+    x = x - 1990
+    f = a + b*x + c*x**2 + d*x**3 + e*x**4
+    return f
+
+param, covar = opt.curve_fit(poly, co2_mean['Year'], co2_mean['Mean'])
+sigma = np.sqrt(np.diag(covar))
+print(sigma)
+year = np.arange(1990, 2041)
+forecast = poly(year, *param)
+sigma = err.error_prop(year, poly, param, covar)
+low = forecast - sigma
+up = forecast + sigma
+co2_mean["fit"] = poly(co2_mean['Year'], *param)
+plt.figure()
+plt.plot(co2_mean['Year'], co2_mean['Mean'], label='CO2 emissions')
+plt.plot(year, forecast, label="forecast")
+# plot uncertainty range
+plt.fill_between(year, low, up, color="cyan", alpha=0.5)
+plt.xlabel('Year')
+plt.ylabel('C02 emissions (tons per capita)')
+plt.title('Error for CO2 emissions', fontsize=16)
+plt.legend()
+plt.show()
+
+print(f"a = {param[0]:5.3f} +/- {sigma[0]:5.3f}")
+print(f"b = {param[1]:5.3f} +/- {sigma[1]:5.3f}")
 
 
 
